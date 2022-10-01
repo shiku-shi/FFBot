@@ -6,7 +6,7 @@ module.exports = {
     async execute(client) {
         console.log(`Ready! Logged in as ${client.user.tag}`);
         const fetchedGuilds = await client.guilds.fetch();
-        console.log(`Currently serving ${fetchedGuilds.size} servers`);
+        console.log(`Currently serving ${fetchedGuilds.size} guilds`);
 
         fetchedGuilds.forEach(async (fetchedGuild) => {
             const guildQueried = await getGuild(fetchedGuild.id);
