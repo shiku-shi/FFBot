@@ -13,9 +13,9 @@ const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('
 
 for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-    const command = require(filePath)
-    
-    client.commands.set(command.data.name, command)
+    const command = require(filePath);
+
+    client.commands.set(command.data.name, command);
 }
 
 // Events loading
@@ -28,7 +28,8 @@ for (const file of eventFiles) {
     const event = require(filePath);
     if (event.once) {
         client.once(event.name, (...args) => event.execute(...args));
-    } else {
+    }
+    else {
         client.on(event.name, (...args) => event.execute(...args));
     }
 }
@@ -37,14 +38,15 @@ for (const file of eventFiles) {
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
-    
+
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) return;
 
     try {
         await command.execute(interaction);
-    } catch (error) {
+    }
+    catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
     }
