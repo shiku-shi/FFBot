@@ -50,4 +50,40 @@ async function updateGuild(id, name) {
     `);
 }
 
-module.exports = { getGuild, createGuild, updateGuild };
+async function getMember(memberId) {
+    return await query(`
+        query {
+            members (filters: { memberId: { eq: "${memberId}" }}) {
+                data { id, attributes { guilds { data { id } } } } }
+        }
+    `);
+}
+
+async function createMember(memberId, name, guilds) {
+    return await query(`
+        mutation {
+            createMember(
+                data: {
+                    memberId: "${memberId}"
+                    name: "${name}"
+                    guilds: ${guilds}
+                }
+            ) { data { id } }
+        }
+    `);
+}
+
+async function updateMember(id, name, guilds) {
+    return await query(`
+        mutation {
+            updateMember(id: ${id}
+                data: {
+                    name: "${name}"
+                    guilds: ${guilds}
+                }
+            ) { data { id } }
+        }
+    `);
+}
+
+module.exports = { getGuild, createGuild, updateGuild, getMember, createMember, updateMember };
