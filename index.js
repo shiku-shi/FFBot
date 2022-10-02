@@ -48,7 +48,13 @@ client.on('interactionCreate', async interaction => {
     }
     catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+
+        const locales = {
+            ru: 'Ошибка при выполнении команды!',
+            uk: 'Помилка під час виконання команди!',
+        };
+
+        await interaction.reply({ content: locales[interaction.locale] ?? 'There was an error while executing this command!', ephemeral: true });
     }
 });
 
