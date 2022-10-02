@@ -86,4 +86,37 @@ async function updateMember(id, name, guilds) {
     `);
 }
 
-module.exports = { getGuild, createGuild, updateGuild, getMember, createMember, updateMember };
+async function createEvent(guild, member, quote = null) {
+    function q() {
+        if (quote) { return `quote: "${quote}"`; }
+        else { return ''; }
+    }
+
+    return await query(`
+        mutation {
+            createEvent(
+                data: {
+                    guild: ${guild}
+                    member: ${member}
+                    ${q(quote)}
+                }
+            ) { data { id } }
+        }
+    `);
+}
+
+async function getLastEvent(member, guild) {
+    return await query(`
+        query {
+            events(
+                filters: { member: { id: { eq: ${member} } }, guild: { id: { eq: ${guild} } } }
+                sort: "createdAt:desc"
+                pagination: { limit: 1 }
+            ) {
+                data { attributes { createdAt } }
+            }
+        }
+    `);
+}
+
+module.exports = { getGuild, createGuild, updateGuild, getMember, createMember, updateMember, createEvent, getLastEvent };
