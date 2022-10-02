@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getGuild, getMember, createMember, updateMember, createEvent, getLastEvent } = require('../strapi');
+const { getGuild, getMember, createMember, updateMember, createEvent, getLastEvent, getAllEvents } = require('../strapi');
 const { stripIndents } = require('common-tags');
 
 module.exports = {
@@ -67,22 +67,80 @@ module.exports = {
 
         const quote = interaction.options.getString('quote');
 
-        const lastEvent = await getLastEvent(await memberId(), guildQueried.guilds.data[0].id);
+        const memberIdQueried = await memberId();
 
-        await createEvent(guildQueried.guilds.data[0].id, await memberId(), quote);
+        const lastEvent = await getLastEvent(memberIdQueried, guildQueried.guilds.data[0].id);
+
+        const lastEventDate = lastEvent.events.data.length === 1 ? Date.parse(lastEvent.events.data[0].attributes.createdAt) : null;
+        const msPassed = lastEventDate ? Date.now() - lastEventDate : null;
+
+        let unit = new String;
+        let timeConvertedPassed = new Number;
+
+        if (msPassed) {
+            switch (true) {
+            case msPassed < 1000:
+                timeConvertedPassed = msPassed;
+                unit = {
+                    def: 'ms',
+                    ru: 'мс',
+                    uk: 'мс',
+                };
+                break;
+            case msPassed < 60000:
+                timeConvertedPassed = msPassed / 1000;
+                unit = {
+                    def: 's',
+                    ru: 'с',
+                    uk: 'с',
+                };
+                break;
+            case msPassed < 3600000:
+                timeConvertedPassed = msPassed / 60000;
+                unit = {
+                    def: 'min',
+                    ru: 'мин',
+                    uk: 'хв',
+                };
+                break;
+            case msPassed < 86400000:
+                timeConvertedPassed = msPassed / 3600000;
+                unit = {
+                    def: 'h',
+                    ru: 'ч',
+                    uk: 'год',
+                };
+                break;
+            case msPassed >= 86400000:
+                timeConvertedPassed = msPassed / 86400000;
+                unit = {
+                    def: 'd',
+                    ru: 'д',
+                    uk: 'д',
+                };
+                break;
+            }
+        }
+
+        await createEvent(guildQueried.guilds.data[0].id, memberIdQueried, quote);
+
+        const tolalEvents = await getAllEvents(memberIdQueried, guildQueried.guilds.data[0].id);
 
         const locales = {
             def: stripIndents`
-                Days past since last friendly killing: 0
-                Prior to this, ${userMentioned} ${lastEvent.events.data.length === 0 ? 'did not kill anyone' : 'held out for ' + lastEvent.events.data[0].attributes.createdAt }
+                Days past since last friendly killing: 0.
+                Prior to this, ${userMentioned} ${msPassed ? `held out for ${timeConvertedPassed.toFixed()} ${unit[interaction.locale] ?? unit.def}.` : 'did not kill anyone.' }
+                In total, ${userMentioned} shot at friendlies ${tolalEvents.events.data.length} times.
             `,
             ru: stripIndents`
-                Дней прошло с последнего убийства союзника: 0
-                До этого ${userMentioned} держался ${lastEvent}
+                Дней прошло с последнего убийства союзника: 0.
+                До этого ${userMentioned} ${msPassed ? `держался ${timeConvertedPassed.toFixed()} ${unit[interaction.locale] ?? unit.def}.` : 'никого не убивал.' }
+                Всего ${userMentioned} стрелял по своим ${tolalEvents.events.data.length} раз.
             `,
             uk: stripIndents`
                 Днів минуло з останнього вбивства союзника: 0
-                До цього ${userMentioned} тримався ${lastEvent}
+                До цього ${userMentioned} ${msPassed ? `тримався ${timeConvertedPassed.toFixed()} ${unit[interaction.locale] ?? unit.def}.` : 'нікого не вбивав.' }
+                Усього ${userMentioned} стріляв по своїх ${tolalEvents.events.data.length} разів.
             `,
         };
 
