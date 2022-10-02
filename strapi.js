@@ -119,4 +119,16 @@ async function getLastEvent(member, guild) {
     `);
 }
 
-module.exports = { getGuild, createGuild, updateGuild, getMember, createMember, updateMember, createEvent, getLastEvent };
+async function getAllEvents(member, guild) {
+    return await query(`
+        query {
+            events(
+                filters: { member: { id: { eq: ${member} } }, guild: { id: { eq: ${guild} } } }
+            ) {
+                data { attributes { createdAt } }
+            }
+        }
+    `);
+}
+
+module.exports = { getGuild, createGuild, updateGuild, getMember, createMember, updateMember, createEvent, getLastEvent, getAllEvents };
