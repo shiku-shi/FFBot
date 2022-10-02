@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { getGuild, getMember, createMember, updateMember } = require('../strapi');
+const { getGuild, getMember, createMember, updateMember, createEvent, getLastEvent } = require('../strapi');
+const { stripIndents } = require('common-tags');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,22 +40,52 @@ module.exports = {
         ),
     async execute(interaction) {
 
-        const memberQueried = await getMember(interaction.user.id);
+        const userMentioned = interaction.options.getUser('member') ?
+            interaction.options.getUser('member') :
+            interaction.user;
+
+        const memberQueried = await getMember(userMentioned.id);
+
         const guildQueried = await getGuild(interaction.guildId);
 
-        if (memberQueried.members.data.length === 0) {
-            const guilds = new Array;
-            guilds.push(guildQueried.guilds.data[0].id);
-            await createMember(interaction.user.id, interaction.user.tag, guilds);
-        }
-        else {
-            const existingGuilds = memberQueried.members.data[0].attributes.guilds.data.map((e) => e.id);
-            if (!existingGuilds.includes(guildQueried.guilds.data[0].id)) {
-                existingGuilds.push(guildQueried.guilds.data[0].id);
-                await updateMember(memberQueried.members.data[0].id, interaction.user.tag, JSON.stringify(existingGuilds));
+        async function memberId() {
+            if (memberQueried.members.data.length === 0) {
+                const guilds = new Array;
+                guilds.push(guildQueried.guilds.data[0].id);
+                const newMember = await createMember(userMentioned.id, userMentioned.tag, JSON.stringify(guilds));
+                return newMember.createMember.data.id;
+            }
+            else {
+                const existingGuilds = memberQueried.members.data[0].attributes.guilds.data.map((e) => e.id);
+                if (!existingGuilds.includes(guildQueried.guilds.data[0].id)) {
+                    existingGuilds.push(guildQueried.guilds.data[0].id);
+                    await updateMember(memberQueried.members.data[0].id, interaction.user.tag, JSON.stringify(existingGuilds));
+                }
+                return memberQueried.members.data[0].id;
             }
         }
 
-        await interaction.reply('Pong!');
+        const quote = interaction.options.getString('quote');
+
+        const lastEvent = await getLastEvent(await memberId(), guildQueried.guilds.data[0].id);
+
+        await createEvent(guildQueried.guilds.data[0].id, await memberId(), quote);
+
+        const locales = {
+            def: stripIndents`
+                Days past since last friendly killing: 0
+                Prior to this, ${userMentioned} ${lastEvent.events.data.length === 0 ? 'did not kill anyone' : 'held out for ' + lastEvent.events.data[0].attributes.createdAt }
+            `,
+            ru: stripIndents`
+                Дней прошло с последнего убийства союзника: 0
+                До этого ${userMentioned} держался ${lastEvent}
+            `,
+            uk: stripIndents`
+                Днів минуло з останнього вбивства союзника: 0
+                До цього ${userMentioned} тримався ${lastEvent}
+            `,
+        };
+
+        await interaction.reply(locales[interaction.locale] ?? locales.def);
     },
 };
