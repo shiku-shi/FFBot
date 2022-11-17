@@ -59,7 +59,7 @@ module.exports = {
                 const existingGuilds = memberQueried.members.data[0].attributes.guilds.data.map((e) => e.id);
                 if (!existingGuilds.includes(guildQueried.guilds.data[0].id)) {
                     existingGuilds.push(guildQueried.guilds.data[0].id);
-                    await updateMember(memberQueried.members.data[0].id, interaction.user.tag, JSON.stringify(existingGuilds));
+                    await updateMember(memberQueried.members.data[0].id, userMentioned.tag, JSON.stringify(existingGuilds));
                 }
                 return memberQueried.members.data[0].id;
             }
